@@ -2,6 +2,7 @@ import os
 from typing import BinaryIO
 
 
+# find_chunk_boundaries divide file into chunks containing several complete docs
 def find_chunk_boundaries(
     file: BinaryIO,
     desired_num_chunks: int,
