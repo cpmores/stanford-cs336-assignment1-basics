@@ -2,6 +2,10 @@ from __future__ import annotations
 import pickle
 import regex as re
 from typing import Iterable, Iterator
+import numpy.typing as npt
+import random
+import torch
+import einops
 
 
 class BPETokenizer:
@@ -104,3 +108,22 @@ class BPETokenizer:
                 byte_parts.append(self.vocab[id])
             
         return b"".join(byte_parts).decode("utf-8", errors="replace")
+
+def data_loading(dataset: npt.NDArray, batch_size: int, context_length: int, device: str) -> tuple[torch.Tensor, torch.Tensor]:
+    index = 0
+    lastTensor = torch.zeros(batch_size, context_length)
+    nextTensor = torch.zeros(batch_size, context_length)
+    for _ in range(batch_size):
+        start = random.randint(0, len(dataset) - context_length - 1)
+        next_start = start + 1
+        lastTensor[index, :] = torch.Tensor(dataset[start : start + context_length])
+        nextTensor[index, :] = torch.Tensor(dataset[next_start : next_start + context_length])
+        index = index + 1
+    lastTensor_gpu = lastTensor.to(device)
+    nextTensor_gpu = nextTensor.to(device)
+
+    return (lastTensor_gpu, nextTensor_gpu)
+
+def get_batch(train_ids: npt.NDArray, batch_size: int, context_length: int, device: str) -> tuple[torch.Tensor, torch.Tensor]:
+    train_batch = data_loading(train_ids, batch_size, context_length, device)
+    return train_batch

@@ -5,19 +5,25 @@ from collections import Counter
 from pathlib import Path
 from typing import BinaryIO
 import multiprocessing as mp
+import pickle
 
 class TokenTrainer: 
     # mini_chunk_size used under _find_chunk_boundaries, the real chunk reading size
     mini_chunk_size = 4096
     num_processes = 4
     PAT = r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"""
+    static_vocab_path = "cs336_basics/checkpoints/bpe_vocab" 
+    static_merge_path = "cs336_basics/checkpoints/bpe_merge" 
+   
 
     # init under test/adapters.py: run_train_bpe to build a trainer
-    def __init__(self, input_path: str | os.PathLike, vocab_size: int, special_tokens: list[str]):
+    def __init__(self, input_path: str | os.PathLike, vocab_size: int, special_tokens: list[str], vocab_path = static_vocab_path, merge_path = static_merge_path):
         self.input_path = Path(input_path)
         self.vocab_size = vocab_size
         self.special_tokens = special_tokens
         self.special_tokens_bytes = [t.encode("utf-8") for t in special_tokens]
+        self.vocab_path = vocab_path
+        self.merge_path = merge_path
         self.vocab = {}
         self.merges = []
 
@@ -25,6 +31,11 @@ class TokenTrainer:
         preToken = self._pretokenize_parallelized()
         self._merge(preToken)
         self._vocab()
+        with open(self.vocab_path, "wb") as f:
+            pickle.dump(self.vocab, f)
+        with open(self.merge_path, "wb") as f:
+            pickle.dump(self.merges, f)
+
         return self.vocab, self.merges
 
     def _pretokenize_parallelized(self) -> Counter:

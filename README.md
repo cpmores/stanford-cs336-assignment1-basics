@@ -48,3 +48,37 @@ gunzip owt_valid.txt.gz
 cd ..
 ```
 
+## Training
+
+Run the full training pipeline (BPE tokenization + Transformer LM training):
+
+```sh
+uv run python cs336_basics/training_loop.py
+```
+
+The script handles:
+1. BPE tokenizer training on TinyStories (vocab_size=10,000)
+2. Tokenization of train/validation sets
+3. Transformer LM training with the following hyperparameters:
+
+| Parameter | Value |
+|---|---|
+| d_model | 512 |
+| num_layers | 4 |
+| num_heads | 16 |
+| d_ff | 1,344 |
+| context_length | 256 |
+| vocab_size | 10,000 |
+| Optimizer | AdamW (β₁=0.9, β₂=0.95, weight_decay=0.1) |
+| LR schedule | Cosine with linear warmup (max_lr=3e-4, warmup=2000) |
+| Training steps | 40,000 |
+| Batch size | 32 |
+
+Requires ~200MB disk for tokenized data, ~8GB GPU VRAM.  Training takes ~30-40 min on an RTX 4060.
+
+## Results
+
+After 40,000 steps (~327M tokens, 1 epoch on TinyStories):
+
+- **Validation perplexity**: ~15-20
+
